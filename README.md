@@ -5,7 +5,7 @@ A Telegram bot and CLI tool to download YouTube audio as MP3.
 ## Quick Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<USER>/<REPO>/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/NoNFake/yt-bot/master/install.sh | bash
 ```
 
 ## Requirements
@@ -37,7 +37,7 @@ The compiled binary will be placed at `build/yt_bot`.
 ### 1. CLI Download
 
 ```bash
-./build/yt_bot https://www.youtube.com/watch?v=...
+yt_bot https://www.youtube.com/watch?v=...
 ```
 
 Saves the track to the current directory as `<title>.mp3`.
@@ -47,7 +47,7 @@ Saves the track to the current directory as `<title>.mp3`.
 Run `serve` to generate a configuration template `yt_bot_token.json`:
 
 ```bash
-./build/yt_bot serve
+yt_bot serve
 ```
 
 Edit the generated file with your credentials:
@@ -68,5 +68,5 @@ Edit the generated file with your credentials:
 Start the bot:
 
 ```bash
-./build/yt_bot serve
+yt_bot serve
 ```
