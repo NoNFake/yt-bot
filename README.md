@@ -1,50 +1,50 @@
 # yt-bot
 
-Telegram-бот и CLI-утилита для скачивания аудио с YouTube в формате MP3.
+A Telegram bot and CLI tool to download YouTube audio as MP3.
 
-## Зависимости
+## Requirements
 
-* C++20 компилятор (GCC 13+ / Clang 16+)
+* C++20 compatible compiler (GCC 13+ / Clang 16+)
 * CMake 3.16+
-* `libcurl4-openssl-dev` и `libssl-dev`
-* `yt-dlp` и `ffmpeg` (должны быть в `PATH`)
+* `libcurl4-openssl-dev` and `libssl-dev`
+* `yt-dlp` and `ffmpeg` (available in `PATH`)
 
-### Установка зависимостей (Ubuntu / Debian)
+### Install Dependencies (Ubuntu / Debian)
 
 ```bash
 sudo apt update
 sudo apt install -y cmake build-essential libcurl4-openssl-dev libssl-dev ffmpeg
-pip install yt-dlp  # или через системный пакетный менеджер
+pip install yt-dlp  # or via your system package manager
 ```
 
-## Сборка
+## Build
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 ```
 
-Исполняемый файл появится в `build/yt_bot`.
+The compiled binary will be placed at `build/yt_bot`.
 
-## Использование
+## Usage
 
-### 1. Скачивание аудио через CLI
+### 1. CLI Download
 
 ```bash
 ./build/yt_bot "https://www.youtube.com/watch?v=..."
 ```
 
-Аудиофайл сохранится в текущую директорию в формате `<title>.mp3`.
+Saves the track to the current directory as `<title>.mp3`.
 
-### 2. Запуск Telegram-бота
+### 2. Telegram Bot Mode
 
-При первом запуске утилита создаст шаблон конфигурации `yt_bot_token.json`:
+Run `serve` to generate a configuration template `yt_bot_token.json`:
 
 ```bash
 ./build/yt_bot serve
 ```
 
-Заполните токены в созданном файле:
+Edit the generated file with your credentials:
 
 ```json
 {
@@ -57,9 +57,9 @@ cmake --build build -j$(nproc)
 }
 ```
 
-* `channel.token`: username канала или ID для пересылки (можно оставить пустым `""`, если отправка в канал не требуется).
+* `channel.token`: Optional channel username or ID to forward downloaded audio to (leave as `""` if not needed).
 
-Запустите бота повторно:
+Start the bot:
 
 ```bash
 ./build/yt_bot serve
