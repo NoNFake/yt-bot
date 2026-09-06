@@ -2,6 +2,12 @@
 
 A Telegram bot and CLI tool to download YouTube audio as MP3.
 
+## Quick Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/<USER>/<REPO>/master/install.sh | bash
+```
+
 ## Requirements
 
 * C++20 compatible compiler (GCC 13+ / Clang 16+)
@@ -31,7 +37,7 @@ The compiled binary will be placed at `build/yt_bot`.
 ### 1. CLI Download
 
 ```bash
-./build/yt_bot "https://www.youtube.com/watch?v=..."
+./build/yt_bot https://www.youtube.com/watch?v=...
 ```
 
 Saves the track to the current directory as `<title>.mp3`.
