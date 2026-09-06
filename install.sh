@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-REPO="${NoNFake/yt-bot}"
+REPO="${REPO:-NoNFake/yt-bot}"
 BIN="yt_bot"
 DEST="${INSTALL_DIR:-/usr/local/bin}"
 
