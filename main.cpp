@@ -3,19 +3,38 @@
 #include <array>
 #include <string>
 #include <memory>
+#include <thread>
+#include <filesystem>
+#include <cctype>
 #include <tgbotxx/tgbotxx.hpp>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
-
+bool is_valid_yt_url(const std::string& url) {
+    if (!url.starts_with("https://www.youtube.com/") &&
+        !url.starts_with("https://youtube.com/") &&
+        !url.starts_with("https://youtu.be/") &&
+        !url.starts_with("https://music.youtube.com/")) {
+        return false;
+    }
+    for (char c : url) {
+        if (!std::isalnum(static_cast<unsigned char>(c)) &&
+            c != ':' && c != '/' && c != '?' && c != '=' &&
+            c != '&' && c != '-' && c != '_' && c != '.' &&
+            c != '%' && c != '+') {
+            return false;
+        }
+    }
+    return true;
+}
 
 struct AudioInfo {
     std::string title;
     std::string filepath;
 };
 
-AudioInfo donwload_audio(
+AudioInfo download_audio(
     const std::string& url,
     const std::string& out_file
 ) {
@@ -67,49 +86,60 @@ public:
         }
     }
 
-
     void onAnyMessage(const tgbotxx::Ptr<tgbotxx::Message>& message) override {
         if (message->text.starts_with("/")) return;
 
-        const std::string& url = message->text;
-        if (!url.starts_with("https://www.youtube.com") && !url.starts_with("https://youtu.be")) {
+        const std::string url = message->text;
+        if (!is_valid_yt_url(url)) {
             api()->sendMessage(message->chat->id, "send a valid youtube link");
             return;
         }
 
-        api()->sendMessage(message->chat->id, "download audio");
-        std::string temp_file = "/tmp/audio_" + std::to_string(message->messageId) + ".mp3";
-        auto info = donwload_audio(url, temp_file);
+        api()->sendMessage(message->chat->id, "downloading audio...");
 
-        if (info.title.empty()) {
-            api()->sendMessage(message->chat->id, "fail to download audio :<");
-            return;
-        }
+        // Process download asynchronously so the polling loop is not blocked
+        std::thread([this, message, url]() {
+            std::string temp_template = "/tmp/audio_" + std::to_string(message->messageId) + ".%(ext)s";
+            auto info = download_audio(url, temp_template);
 
-        std::string actual_file = info.filepath.empty() ? temp_file : info.filepath;
+            if (info.title.empty() || info.filepath.empty()) {
+                api()->sendMessage(message->chat->id, "fail to download audio :<");
+                return;
+            }
 
-        try {
-            cpr::File audio_file(actual_file);
-            api()->sendAudio(message->chat->id, audio_file, 0, "", "", {}, 0, "YouTube", info.title);
-            api()->sendAudio(channel_id, audio_file, 0, "From @" + message->from->username, "", {}, 0, "YouTube", info.title);  
-        } catch (const std::exception& e) {
-            std::cerr << "tg error: " << e.what() << "\n";
-        }
+            try {
+                std::error_code ec;
+                auto file_size = std::filesystem::file_size(info.filepath, ec);
+                if (!ec && file_size > 50 * 1024 * 1024) {
+                    api()->sendMessage(message->chat->id, "file is too large (>50MB) for Telegram Bot API");
+                } else {
+                    cpr::File audio_file(info.filepath);
+                    api()->sendAudio(message->chat->id, audio_file, 0, "", "", {}, 0, "YouTube", info.title);
 
-        std::remove(actual_file.c_str());
+                    if (!channel_id.empty()) {
+                        std::string from_name = "Unknown";
+                        if (message->from) {
+                            from_name = !message->from->username.empty()
+                                ? "@" + message->from->username
+                                : message->from->firstName;
+                        }
+                        api()->sendAudio(channel_id, audio_file, 0, "From " + from_name, "", {}, 0, "YouTube", info.title);
+                    }
+                }
+            } catch (const std::exception& e) {
+                std::cerr << "tg error: " << e.what() << "\n";
+            }
+
+            std::remove(info.filepath.c_str());
+        }).detach();
     }
 };
-
-
 
 void print_help(const char* prog) {
     std::cout << "usage:\n"
               << " " << prog << " <youtube_url>  download audio\n" 
               << " " << prog << " serve          run bot serve\n"; 
 }
-
-
-
 
 void serve() {
     std::ifstream file("yt_bot_token.json");
@@ -127,12 +157,15 @@ void serve() {
     json cfg;
     file >> cfg;
 
-    if (cfg["bot"]["token"].empty()) {
+    std::string bot_token = cfg.value("bot", json::object()).value("token", "");
+    std::string chan_token = cfg.value("channel", json::object()).value("token", "");
+
+    if (bot_token.empty()) {
         std::cerr << "bot token is empty in yt_bot_token.json\n";
         return;
     }
 
-    TgBot bot(cfg["bot"]["token"], cfg["channel"]["token"]);
+    TgBot bot(bot_token, chan_token);
     std::cout << "bot started...\n";
     bot.start();
 }
@@ -141,7 +174,12 @@ void download(
     const std::string& url,
     const std::string& out_file
 ) {
-    auto info = donwload_audio(url, out_file);
+    if (!is_valid_yt_url(url)) {
+        std::cerr << "invalid youtube url\n";
+        return;
+    }
+
+    auto info = download_audio(url, out_file);
     if (!info.title.empty()) {
         std::cout << "downloaded: " << info.title << "\n";
         if (!info.filepath.empty()) {
@@ -152,7 +190,6 @@ void download(
 
     std::cerr << "download error\n";
 }
-
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -166,7 +203,7 @@ int main(int argc, char* argv[]) {
         serve();
         return 0;
     }
-    if (arg.starts_with("https://www.youtube.com") || arg.starts_with("https://youtu.be")) {
+    if (is_valid_yt_url(arg)) {
         download(arg, "%(title)s.%(ext)s");
         return 0;
     }

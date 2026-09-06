@@ -3,3 +3,4 @@ bin/
 *.o
 TelegramDownloaderAudio/token.json
 yt_bot_token.json
+*.mp3
