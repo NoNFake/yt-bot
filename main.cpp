@@ -102,7 +102,6 @@ public:
 
         api()->sendMessage(message->chat->id, "downloading audio...");
 
-        // Process download asynchronously so the polling loop is not blocked
         std::thread([this, message, url]() {
             std::string temp_dir = "/tmp/yt_bot_" + std::to_string(message->chat->id) + "_" + std::to_string(message->messageId);
             std::error_code ec;
