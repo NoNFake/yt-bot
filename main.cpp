@@ -92,7 +92,7 @@ public:
     }
 
     void onAnyMessage(const tgbotxx::Ptr<tgbotxx::Message>& message) override {
-        if (message->text.starts_with("/")) return;
+        if (message->text.empty() || message->text.starts_with("/")) return;
 
         const std::string url = message->text;
         if (!is_valid_yt_url(url)) {
@@ -104,16 +104,19 @@ public:
 
         // Process download asynchronously so the polling loop is not blocked
         std::thread([this, message, url]() {
-            std::string temp_template = "/tmp/audio_" + std::to_string(message->messageId) + ".%(ext)s";
+            std::string temp_dir = "/tmp/yt_bot_" + std::to_string(message->chat->id) + "_" + std::to_string(message->messageId);
+            std::error_code ec;
+            std::filesystem::create_directories(temp_dir, ec);
+            const std::string temp_template = temp_dir + "/audio.%(ext)s";
             auto info = download_audio(url, temp_template);
 
             if (info.title.empty() || info.filepath.empty()) {
                 api()->sendMessage(message->chat->id, "fail to download audio :<");
+                std::filesystem::remove_all(temp_dir, ec);
                 return;
             }
 
             try {
-                std::error_code ec;
                 auto file_size = std::filesystem::file_size(info.filepath, ec);
                 if (!ec && file_size > 50 * 1024 * 1024) {
                     api()->sendMessage(message->chat->id, "file is too large (>50MB) for Telegram Bot API");
@@ -135,7 +138,7 @@ public:
                 std::cerr << "tg error: " << e.what() << "\n";
             }
 
-            std::remove(info.filepath.c_str());
+            std::filesystem::remove_all(temp_dir, ec);
         }).detach();
     }
 };

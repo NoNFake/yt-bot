@@ -8,6 +8,8 @@ A Telegram bot and CLI tool to download YouTube audio as MP3.
 curl -fsSL https://raw.githubusercontent.com/NoNFake/yt-bot/master/install.sh | bash
 ```
 
+Run as root to also get a systemd service (see [Server Deployment](#3-server-deployment-systemd)).
+
 ## Requirements
 
 * C++20 compatible compiler (GCC 13+ / Clang 16+)
@@ -74,7 +76,25 @@ Start the bot:
 yt_bot serve
 ```
 
-### 3. Cookies (server / VPS)
+### 3. Server Deployment (systemd)
+
+When the install script runs as root, it installs a systemd unit `yt-bot.service` (enabled, not started) with `WorkingDirectory=/opt/yt-bot`.
+
+```bash
+sudo cp yt_bot_token.json cookies.txt /opt/yt-bot/
+sudo systemctl start yt-bot
+journalctl -u yt-bot -f
+```
+
+The unit restarts the bot on failure and after reboot. Configuration and cookies are read from `/opt/yt-bot`.
+
+The install script also asks whether to update `yt-dlp` to the latest version. Say yes: YouTube regularly breaks older builds. To update later:
+
+```bash
+pipx upgrade yt-dlp    # or: pip3 install --user -U yt-dlp
+```
+
+### 4. Cookies (server / VPS)
 
 YouTube often blocks datacenter IPs with `Sign in to confirm you're not a bot`. Fix: give the bot cookies.
 
@@ -83,5 +103,3 @@ YouTube often blocks datacenter IPs with `Sign in to confirm you're not a bot`. 
 3. Put the file as `cookies.txt` in the bot's working directory (same place as `yt_bot_token.json`).
 
 The bot picks `cookies.txt` up automatically when it exists. Cookies expire after months; re-export when downloads start failing.
-
-If `yt_bot serve` runs in a directory without write access to `cookies.txt` or the config, move the bot to a dedicated directory first.
