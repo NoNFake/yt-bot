@@ -14,6 +14,9 @@ curl -fsSL https://raw.githubusercontent.com/NoNFake/yt-bot/master/install.sh | 
 * CMake 3.16+
 * `libcurl4-openssl-dev` and `libssl-dev`
 * `yt-dlp` and `ffmpeg` (available in `PATH`)
+* a JS runtime for YouTube (`node` or `deno`)
+
+The install script installs missing `yt-dlp`, `ffmpeg` and `nodejs` automatically (APT / pipx / pip).
 
 ### Install Dependencies (Ubuntu / Debian)
 
@@ -70,3 +73,15 @@ Start the bot:
 ```bash
 yt_bot serve
 ```
+
+### 3. Cookies (server / VPS)
+
+YouTube often blocks datacenter IPs with `Sign in to confirm you're not a bot`. Fix: give the bot cookies.
+
+1. In your local browser install the "Get cookies.txt LOCALLY" extension.
+2. Export cookies for `youtube.com` in Netscape format.
+3. Put the file as `cookies.txt` in the bot's working directory (same place as `yt_bot_token.json`).
+
+The bot picks `cookies.txt` up automatically when it exists. Cookies expire after months; re-export when downloads start failing.
+
+If `yt_bot serve` runs in a directory without write access to `cookies.txt` or the config, move the bot to a dedicated directory first.

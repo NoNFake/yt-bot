@@ -38,7 +38,12 @@ AudioInfo download_audio(
     const std::string& url,
     const std::string& out_file
 ) {
-    std::string cmd = "yt-dlp --cookies-from-browser firefox --cookies-from-browser chrome   -x --audio-format mp3 -o \"" + out_file + "\" --print title --print after_move:filepath \"" + url + "\" 2>/dev/null";
+    std::string cookie_arg;
+    if (std::filesystem::exists("cookies.txt")) {
+        cookie_arg = "--cookies cookies.txt ";
+    }
+    std::string cmd = "yt-dlp " + cookie_arg +
+    "-x --audio-format mp3 -o \"" + out_file + "\" --print title --print after_move:filepath \"" + url + "\"";
     std::array<char, 256> buffer;
     std::string output;
     std::unique_ptr<FILE, decltype(&pclose)> pipe(
